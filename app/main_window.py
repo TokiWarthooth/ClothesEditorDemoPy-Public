@@ -264,3 +264,36 @@ class MainWindow(QMainWindow):
         self.line_properties_layout.addWidget(snap_checkbox)
         self.line_properties_layout.addWidget(reset_button)
         self.line_properties_layout.addStretch()
+
+        delete_button = QPushButton("Delete Selected Line")
+        delete_button.clicked.connect(lambda: self.delete_selected_line(line_tool))
+        
+        # Кнопка удаления всех линий
+        clear_all_button = QPushButton("Clear All Lines")
+        clear_all_button.clicked.connect(lambda: line_tool.reset(self.canvas))
+        
+        self.line_properties_layout.addWidget(mode_label)
+        self.line_properties_layout.addWidget(mode_combo)
+        self.line_properties_layout.addWidget(width_label)
+        self.line_properties_layout.addWidget(width_slider)
+        self.line_properties_layout.addWidget(snap_checkbox)
+        self.line_properties_layout.addWidget(delete_button)
+        self.line_properties_layout.addWidget(clear_all_button)
+        self.line_properties_layout.addWidget(reset_button)
+        self.line_properties_layout.addStretch()
+
+    def delete_selected_line(self, line_tool):
+        """Удаляет выбранную линию"""
+        if hasattr(line_tool, 'selected_line_index') and line_tool.selected_line_index != -1:
+            # Удаляем графический элемент
+            line_data = line_tool.lines[line_tool.selected_line_index]
+            try:
+                self.canvas.scene.removeItem(line_data['path_item'])
+            except:
+                pass
+            
+            # Удаляем из списка
+            line_tool.lines.pop(line_tool.selected_line_index)
+            line_tool.selected_line_index = -1
+            line_tool.edit_points = []
+            self.canvas.viewport().update()
