@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt
 from .canvas import Canvas
 from .tool_manager import ToolManager
 from .tools.bezier_tool import BezierTool
+from .pattern_panel import PatternPanel
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -152,6 +153,14 @@ class MainWindow(QMainWindow):
         self.line_properties_dock.setWidget(self.line_properties_widget)
         self.line_properties_dock.setVisible(False)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.line_properties_dock)
+        
+        # Док-виджет для шаблонов выкроек (НОВЫЙ)
+        self.pattern_dock = QDockWidget("Pattern Templates", self)
+        self.pattern_panel = PatternPanel()
+        self.pattern_panel.pattern_selected.connect(self.on_pattern_selected)
+        self.pattern_dock.setWidget(self.pattern_panel)
+        self.pattern_dock.setVisible(False)  # Скрываем по умолчанию
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.pattern_dock)
     
     def create_statusbar(self):
         self.statusBar().showMessage("Ready")
@@ -216,14 +225,25 @@ class MainWindow(QMainWindow):
         tool_name = tool.__class__.__name__
         is_bezier = tool_name == "BezierTool"
         is_line = tool_name == "LineTool"
+        is_pattern = tool_name == "PatternTool"
         
         self.bezier_properties_dock.setVisible(is_bezier)
         self.line_properties_dock.setVisible(is_line)
+        self.pattern_dock.setVisible(is_pattern)
         
         if is_bezier:
             self.update_bezier_properties(tool)
         elif is_line:
             self.update_line_properties(tool)
+    
+    def on_pattern_selected(self, template, params):
+        """Обработчик выбора шаблона из панели"""
+        pattern_tool = self.tool_manager.get_pattern_tool()
+        if pattern_tool:
+            pattern_tool.set_pattern(template, params)
+            self.statusBar().showMessage(f"Pattern selected: {template.name}. Click on canvas to place it.")
+            # Автоматически переключаемся на инструмент Pattern
+            self.tool_manager.set_tool(pattern_tool)
 
 
     def update_line_properties(self, line_tool):

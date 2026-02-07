@@ -1,6 +1,7 @@
 # app/tool_manager.py
 from PyQt6.QtGui import QAction
 from .tools import PenTool, SelectTool, LineTool, RectangleTool, EllipseTool, BezierTool
+from .tools.pattern_tool import PatternTool
 
 class ToolManager:
     def __init__(self, canvas):
@@ -11,7 +12,8 @@ class ToolManager:
             "line": LineTool(),
             "rectangle": RectangleTool(),
             "ellipse": EllipseTool(),
-            "bezier": BezierTool()
+            "bezier": BezierTool(),
+            "pattern": PatternTool()
         }
         self.current_tool = None
         
@@ -32,3 +34,7 @@ class ToolManager:
          # Уведомляем главное окно о смене инструмента
         if hasattr(self.canvas.parent(), 'on_tool_changed'):
             self.canvas.parent().on_tool_changed(tool)
+    
+    def get_pattern_tool(self):
+        """Возвращает инструмент Pattern"""
+        return self.tools.get("pattern")
