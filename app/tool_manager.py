@@ -31,9 +31,9 @@ class ToolManager:
         # Можно добавить смену курсора
         self.canvas.setCursor(tool.get_cursor())
 
-         # Уведомляем главное окно о смене инструмента
-        if hasattr(self.canvas.parent(), 'on_tool_changed'):
-            self.canvas.parent().on_tool_changed(tool)
+        # Уведомляем главное окно о смене инструмента
+        if hasattr(self.canvas.window(), 'on_tool_changed'):
+            self.canvas.window().on_tool_changed(tool)
     
     def get_pattern_tool(self):
         """Возвращает инструмент Pattern"""

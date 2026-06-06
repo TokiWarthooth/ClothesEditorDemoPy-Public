@@ -1,10 +1,15 @@
-from PyQt6.QtWidgets import QMainWindow, QToolBar, QStatusBar, QDockWidget, QWidget, QVBoxLayout
+from PyQt6.QtWidgets import (QMainWindow, QToolBar, QDockWidget, QWidget,
+                             QVBoxLayout, QHBoxLayout, QGridLayout,
+                             QFileDialog, QMessageBox, QLabel, QComboBox)
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 from .canvas import Canvas
 from .tool_manager import ToolManager
 from .tools.bezier_tool import BezierTool
 from .pattern_panel import PatternPanel
+from .project_manager import ProjectManager
+from .measurements import MeasurementSystem
+from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -15,44 +20,76 @@ class MainWindow(QMainWindow):
     def init_ui(self):
         self.setWindowTitle("Clothing Designer")
         self.setGeometry(100, 100, 1200, 800)
-        
-        # Создаем холст
-        canvas_width = self.project_data.get("width", 800)
+
+        # Система измерений
+        self.measurements = MeasurementSystem("cm")
+
+        # Холст
+        canvas_width  = self.project_data.get("width", 800)
         canvas_height = self.project_data.get("height", 600)
         self.canvas = Canvas(canvas_width, canvas_height)
-        self.setCentralWidget(self.canvas)
-        
-        # Создаем менеджер инструментов
+
+        # Линейки
+        self.h_ruler = HorizontalRuler(self.canvas, self.measurements)
+        self.v_ruler = VerticalRuler(self.canvas, self.measurements)
+
+        # Центральный виджет: угол + линейки + холст
+        central = QWidget()
+        grid = QGridLayout(central)
+        grid.setSpacing(0)
+        grid.setContentsMargins(0, 0, 0, 0)
+
+        corner = QWidget()
+        corner.setFixedSize(RULER_SIZE, RULER_SIZE)
+        corner.setStyleSheet("background-color: #d0d0d0;")
+
+        grid.addWidget(corner,        0, 0)
+        grid.addWidget(self.h_ruler,  0, 1)
+        grid.addWidget(self.v_ruler,  1, 0)
+        grid.addWidget(self.canvas,   1, 1)
+        grid.setColumnStretch(1, 1)
+        grid.setRowStretch(1, 1)
+
+        self.setCentralWidget(central)
+
+        # Менеджеры
         self.tool_manager = ToolManager(self.canvas)
-        
-        # Создаем интерфейс
+        self.project_manager = ProjectManager()
+        self.current_file_path = None
+
+        # UI
         self.create_menu()
         self.create_toolbar()
         self.create_dock_widgets()
         self.create_statusbar()
-        
-        # Если открываем существующий проект, загружаем его
+
+        # Сигналы
+        self.canvas.mouse_moved.connect(self._on_mouse_moved)
+        self.canvas.horizontalScrollBar().valueChanged.connect(self.h_ruler.update)
+        self.canvas.verticalScrollBar().valueChanged.connect(self.v_ruler.update)
+
         if self.project_data["type"] == "existing":
             self.load_project(self.project_data["file_path"])
     
     def create_menu(self):
         menubar = self.menuBar()
-        print("Menubar created")
-        
+
         # Меню File
         file_menu = menubar.addMenu("File")
-        print("File menu created")
         
         new_action = QAction("New", self)
         new_action.setShortcut("Ctrl+N")
+        new_action.triggered.connect(self.new_project)
         file_menu.addAction(new_action)
-        
+
         open_action = QAction("Open", self)
         open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_project_dialog)
         file_menu.addAction(open_action)
-        
+
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_project_dialog)
         file_menu.addAction(save_action)
         
         file_menu.addSeparator()
@@ -64,7 +101,6 @@ class MainWindow(QMainWindow):
         
         # Меню View (новое)
         view_menu = menubar.addMenu("View")
-        print("View menu created")
         
         # Подменю Themes
         themes_menu = view_menu.addMenu("Themes")
@@ -163,17 +199,99 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.pattern_dock)
     
     def create_statusbar(self):
-        self.statusBar().showMessage("Ready")
+        sb = self.statusBar()
+
+        # Переключатель единиц (постоянный виджет, справа)
+        unit_widget = QWidget()
+        unit_layout = QHBoxLayout(unit_widget)
+        unit_layout.setContentsMargins(6, 0, 6, 0)
+        unit_layout.setSpacing(4)
+        unit_layout.addWidget(QLabel("Units:"))
+        self.unit_combo = QComboBox()
+        self.unit_combo.addItems(["cm", "mm", "px"])
+        self.unit_combo.setFixedWidth(55)
+        self.unit_combo.currentTextChanged.connect(self._on_unit_changed)
+        unit_layout.addWidget(self.unit_combo)
+        sb.addPermanentWidget(unit_widget)
+
+        # Координаты курсора (постоянный виджет, справа)
+        self.coord_label = QLabel("X: —   Y: —")
+        self.coord_label.setMinimumWidth(200)
+        sb.addPermanentWidget(self.coord_label)
+
+        sb.showMessage("Ready")
     
+    def _on_mouse_moved(self, scene_pos):
+        self.coord_label.setText(
+            self.measurements.format_coord(scene_pos.x(), scene_pos.y())
+        )
+        self.h_ruler.update_cursor(scene_pos.x(), scene_pos.y())
+        self.v_ruler.update_cursor(scene_pos.x(), scene_pos.y())
+
+    def _on_unit_changed(self, unit):
+        self.measurements.unit = unit
+        self.h_ruler.update()
+        self.v_ruler.update()
+
     def toggle_grid(self, checked):
         """Переключает видимость сетки на холсте"""
         self.canvas.set_grid_visibility(checked)
         status = "enabled" if checked else "disabled"
         self.statusBar().showMessage(f"Grid {status}")
     
+    def new_project(self):
+        reply = QMessageBox.question(
+            self, "New Project",
+            "Create a new project? Unsaved changes will be lost.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.canvas.scene.clear()
+            self.current_file_path = None
+            self.setWindowTitle("Clothing Designer")
+            self.statusBar().showMessage("New project created")
+
+    def open_project_dialog(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Project", "", "Clothing Designer Files (*.cld)"
+        )
+        if file_path:
+            self.load_project(file_path)
+
+    def save_project_dialog(self):
+        if self.current_file_path:
+            self._do_save(self.current_file_path)
+        else:
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "Save Project", "", "Clothing Designer Files (*.cld)"
+            )
+            if file_path:
+                self._do_save(file_path)
+
+    def _do_save(self, file_path):
+        self.project_manager.current_project = {
+            "width": int(self.canvas.sceneRect().width()),
+            "height": int(self.canvas.sceneRect().height()),
+            "background": "#FFFFFF",
+            "layers": [],
+            "objects": []
+        }
+        if self.project_manager.save_project(file_path):
+            self.current_file_path = file_path
+            self.setWindowTitle(f"Clothing Designer — {file_path.split('/')[-1]}")
+            self.statusBar().showMessage(f"Saved: {file_path}")
+        else:
+            QMessageBox.warning(self, "Save Error", "Could not save the project.")
+
     def load_project(self, file_path):
-        # Здесь будет логика загрузки проекта
-        self.statusBar().showMessage(f"Loaded project: {file_path}")
+        data = self.project_manager.load_project(file_path)
+        if data:
+            self.canvas.scene.clear()
+            self.current_file_path = file_path
+            self.setWindowTitle(f"Clothing Designer — {file_path.split('/')[-1]}")
+            self.statusBar().showMessage(f"Opened: {file_path}")
+        else:
+            QMessageBox.warning(self, "Open Error", f"Could not open: {file_path}")
 
 
 
@@ -181,14 +299,6 @@ class MainWindow(QMainWindow):
 
 
 
-    def on_tool_changed(self, tool):
-        # Показываем/скрываем панель свойств Безье
-        is_bezier = isinstance(tool, BezierTool)
-        self.bezier_properties_dock.setVisible(is_bezier)
-        
-        if is_bezier:
-            self.update_bezier_properties(tool)
-            
     def update_bezier_properties(self, bezier_tool):
         # Очищаем layout
         while self.bezier_properties_layout.count():
@@ -277,21 +387,12 @@ class MainWindow(QMainWindow):
         reset_button = QPushButton("Reset Line")
         reset_button.clicked.connect(lambda: line_tool.reset(self.canvas))
         
-        self.line_properties_layout.addWidget(mode_label)
-        self.line_properties_layout.addWidget(mode_combo)
-        self.line_properties_layout.addWidget(width_label)
-        self.line_properties_layout.addWidget(width_slider)
-        self.line_properties_layout.addWidget(snap_checkbox)
-        self.line_properties_layout.addWidget(reset_button)
-        self.line_properties_layout.addStretch()
-
         delete_button = QPushButton("Delete Selected Line")
         delete_button.clicked.connect(lambda: self.delete_selected_line(line_tool))
-        
-        # Кнопка удаления всех линий
+
         clear_all_button = QPushButton("Clear All Lines")
         clear_all_button.clicked.connect(lambda: line_tool.reset(self.canvas))
-        
+
         self.line_properties_layout.addWidget(mode_label)
         self.line_properties_layout.addWidget(mode_combo)
         self.line_properties_layout.addWidget(width_label)

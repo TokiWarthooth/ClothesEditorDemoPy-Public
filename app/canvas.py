@@ -1,14 +1,17 @@
-from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
 from PyQt6.QtGui import QPainter, QColor, QPen, QBrush
-from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtCore import Qt, QRectF, QPointF, pyqtSignal
 
 class Canvas(QGraphicsView):
+    mouse_moved = pyqtSignal(QPointF)
+
     def __init__(self, width, height):
         super().__init__()
         self.scene = QGraphicsScene()
         self.scene.setSceneRect(0, 0, width, height)
         self.setScene(self.scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setFrameShape(QFrame.Shape.NoFrame)
         
         # Настройки по умолчанию
         self.current_tool = None
@@ -95,6 +98,7 @@ class Canvas(QGraphicsView):
             super().mousePressEvent(event)
             
     def mouseMoveEvent(self, event):
+        self.mouse_moved.emit(self.mapToScene(event.pos()))
         if self.current_tool:
             self.current_tool.mouse_move(event, self)
         else:
