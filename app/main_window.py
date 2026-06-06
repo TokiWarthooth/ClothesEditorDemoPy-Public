@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QToolBar, QDockWidget, QWidget,
                              QVBoxLayout, QHBoxLayout, QGridLayout,
                              QFileDialog, QMessageBox, QLabel, QComboBox)
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QTransform
 from PyQt6.QtCore import Qt
 from .canvas import Canvas
 from .tool_manager import ToolManager
@@ -99,7 +99,20 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
-        # Меню View (новое)
+        # Меню Edit
+        edit_menu = menubar.addMenu("Edit")
+
+        flip_h = QAction("Flip Horizontal", self)
+        flip_h.setShortcut("Shift+H")
+        flip_h.triggered.connect(lambda: self._flip_items(horizontal=True))
+        edit_menu.addAction(flip_h)
+
+        flip_v = QAction("Flip Vertical", self)
+        flip_v.setShortcut("Shift+V")
+        flip_v.triggered.connect(lambda: self._flip_items(horizontal=False))
+        edit_menu.addAction(flip_v)
+
+        # Меню View
         view_menu = menubar.addMenu("View")
         
         # Подменю Themes
@@ -232,6 +245,24 @@ class MainWindow(QMainWindow):
         self.measurements.unit = unit
         self.h_ruler.update()
         self.v_ruler.update()
+
+    def _flip_items(self, horizontal: bool):
+        items = self.canvas.scene.selectedItems()
+        if not items:
+            self.statusBar().showMessage("Select items first (use Select tool)")
+            return
+
+        for item in items:
+            center = item.boundingRect().center()
+            cx, cy = center.x(), center.y()
+            t = QTransform()
+            t.translate(cx, cy)
+            t.scale(-1 if horizontal else 1, 1 if horizontal else -1)
+            t.translate(-cx, -cy)
+            item.setTransform(item.transform() * t)
+
+        axis = "horizontal" if horizontal else "vertical"
+        self.statusBar().showMessage(f"Flipped {len(items)} item(s) {axis}")
 
     def toggle_grid(self, checked):
         """Переключает видимость сетки на холсте"""

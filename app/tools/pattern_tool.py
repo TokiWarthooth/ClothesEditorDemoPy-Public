@@ -60,7 +60,10 @@ class PatternTool(Tool):
         
         path_item = canvas.scene.addPath(path, pen, brush)
         path_item.setPos(position)
-        path_item.setFlag(path_item.GraphicsItemFlag.ItemIsSelectable, True)
+        path_item.setFlags(
+            path_item.GraphicsItemFlag.ItemIsSelectable |
+            path_item.GraphicsItemFlag.ItemIsMovable
+        )
         
         # Сохраняем информацию о шаблоне
         pattern_data = {

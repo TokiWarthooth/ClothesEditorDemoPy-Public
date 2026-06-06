@@ -90,22 +90,29 @@ class Canvas(QGraphicsView):
     
     def set_tool(self, tool):
         self.current_tool = tool
-        
+        if getattr(tool, 'use_scene_events', False):
+            self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        else:
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
+
+    def _use_scene(self):
+        return getattr(self.current_tool, 'use_scene_events', False)
+
     def mousePressEvent(self, event):
-        if self.current_tool:
+        if self.current_tool and not self._use_scene():
             self.current_tool.mouse_press(event, self)
         else:
             super().mousePressEvent(event)
-            
+
     def mouseMoveEvent(self, event):
         self.mouse_moved.emit(self.mapToScene(event.pos()))
-        if self.current_tool:
+        if self.current_tool and not self._use_scene():
             self.current_tool.mouse_move(event, self)
         else:
             super().mouseMoveEvent(event)
-            
+
     def mouseReleaseEvent(self, event):
-        if self.current_tool:
+        if self.current_tool and not self._use_scene():
             self.current_tool.mouse_release(event, self)
         else:
             super().mouseReleaseEvent(event)

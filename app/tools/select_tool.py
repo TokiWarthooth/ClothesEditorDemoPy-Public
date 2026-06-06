@@ -1,10 +1,11 @@
-# app/tools/select_tool.py
 from .base_tool import Tool
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QGraphicsView
+
 
 class SelectTool(Tool):
-    def mouse_press(self, event, canvas):
-        print("Select tool activated")
-        
+    # Сигнализирует canvas передавать события напрямую в Qt scene
+    use_scene_events = True
+
     def get_cursor(self):
         return Qt.CursorShape.ArrowCursor

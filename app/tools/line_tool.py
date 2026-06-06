@@ -89,7 +89,11 @@ class LineTool(Tool):
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             
             path_item = canvas.scene.addPath(path, pen)
-            
+            path_item.setFlags(
+                path_item.GraphicsItemFlag.ItemIsSelectable |
+                path_item.GraphicsItemFlag.ItemIsMovable
+            )
+
             # Сохраняем линию в список
             line_data = {
                 'points': self.points.copy(),

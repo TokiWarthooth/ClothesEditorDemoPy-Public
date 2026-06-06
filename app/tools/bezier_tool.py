@@ -110,6 +110,10 @@ class BezierTool(Tool):
             pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
             
             self.current_path = canvas.scene.addPath(path, pen)
+            self.current_path.setFlags(
+                self.current_path.GraphicsItemFlag.ItemIsSelectable |
+                self.current_path.GraphicsItemFlag.ItemIsMovable
+            )
             
     def update_bezier_curve(self, canvas):
         if self.current_path and len(self.points) >= 2:
