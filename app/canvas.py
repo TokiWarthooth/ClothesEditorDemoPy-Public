@@ -117,6 +117,13 @@ class Canvas(QGraphicsView):
         else:
             super().mouseReleaseEvent(event)
 
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            for item in self.scene.selectedItems():
+                self.scene.removeItem(item)
+        else:
+            super().keyPressEvent(event)
+
     def get_current_pen(self):
         """Возвращает QPen с текущими настройками"""
         pen = QPen(self.pen_color, self.pen_width)
