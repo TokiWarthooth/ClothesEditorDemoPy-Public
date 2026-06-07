@@ -5,6 +5,8 @@ from .line_tool import LineTool
 from .rectangle_tool import RectangleTool
 from .ellipse_tool import EllipseTool
 from .bezier_tool import BezierTool
+from .text_tool import TextTool
+from .grainline_tool import GrainlineTool
 
 __all__ = [
     'Tool',
@@ -13,5 +15,7 @@ __all__ = [
     'LineTool',
     'RectangleTool',
     'EllipseTool',
-    'BezierTool'
+    'BezierTool',
+    'TextTool',
+    'GrainlineTool'
 ]

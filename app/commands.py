@@ -29,6 +29,20 @@ class RemoveItemsCommand(QUndoCommand):
             self.scene.addItem(item)
 
 
+class ChangePenCommand(QUndoCommand):
+    def __init__(self, item, old_pen, new_pen, description="Change style"):
+        super().__init__(description)
+        self.item = item
+        self.old_pen = old_pen
+        self.new_pen = new_pen
+
+    def redo(self):
+        self.item.setPen(self.new_pen)
+
+    def undo(self):
+        self.item.setPen(self.old_pen)
+
+
 class TransformCommand(QUndoCommand):
     def __init__(self, item, old_transform, new_transform, description="Transform"):
         super().__init__(description)

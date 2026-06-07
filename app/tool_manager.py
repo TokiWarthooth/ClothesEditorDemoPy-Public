@@ -1,6 +1,7 @@
 # app/tool_manager.py
 from PyQt6.QtGui import QAction
-from .tools import PenTool, SelectTool, LineTool, RectangleTool, EllipseTool, BezierTool
+from .tools import (PenTool, SelectTool, LineTool, RectangleTool, EllipseTool,
+                    BezierTool, TextTool, GrainlineTool)
 from .tools.pattern_tool import PatternTool
 
 class ToolManager:
@@ -13,7 +14,9 @@ class ToolManager:
             "rectangle": RectangleTool(),
             "ellipse": EllipseTool(),
             "bezier": BezierTool(),
-            "pattern": PatternTool()
+            "pattern": PatternTool(),
+            "text": TextTool(),
+            "grainline": GrainlineTool()
         }
         self.current_tool = None
         
@@ -38,3 +41,9 @@ class ToolManager:
     def get_pattern_tool(self):
         """Возвращает инструмент Pattern"""
         return self.tools.get("pattern")
+
+    def get_text_tool(self):
+        return self.tools.get("text")
+
+    def get_grainline_tool(self):
+        return self.tools.get("grainline")

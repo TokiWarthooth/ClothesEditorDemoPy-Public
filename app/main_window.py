@@ -11,6 +11,8 @@ from .project_manager import ProjectManager
 from .measurements import MeasurementSystem
 from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
 from .seam_panel import SeamAllowancePanel
+from .seam_style_panel import SeamStylePanel
+from .annotations_panel import AnnotationsPanel
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -227,7 +229,17 @@ class MainWindow(QMainWindow):
         self.seam_dock = QDockWidget("Seam Allowance", self)
         self.seam_dock.setWidget(SeamAllowancePanel(self.canvas))
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.seam_dock)
-    
+
+        # Dok — обозначения (стили) швов
+        self.seam_style_dock = QDockWidget("Seam Style", self)
+        self.seam_style_dock.setWidget(SeamStylePanel(self.canvas))
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.seam_style_dock)
+
+        # Dok — аннотации (текст, долевая нить, нумерация)
+        self.annotations_dock = QDockWidget("Annotations", self)
+        self.annotations_dock.setWidget(AnnotationsPanel(self.canvas, self.tool_manager))
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.annotations_dock)
+
     def create_statusbar(self):
         sb = self.statusBar()
 

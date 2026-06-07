@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame, QGraphicsTextItem
 from PyQt6.QtGui import QPainter, QColor, QPen, QBrush, QUndoStack
 from PyQt6.QtCore import Qt, QRectF, QPointF, pyqtSignal
 
@@ -120,6 +120,13 @@ class Canvas(QGraphicsView):
             super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event):
+        focus_item = self.scene.focusItem()
+        if (isinstance(focus_item, QGraphicsTextItem)
+                and focus_item.textInteractionFlags() != Qt.TextInteractionFlag.NoTextInteraction):
+            # Текст редактируется — отдаём клавишу редактору, а не удалению объектов
+            super().keyPressEvent(event)
+            return
+
         if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             items = self.scene.selectedItems()
             if items:
