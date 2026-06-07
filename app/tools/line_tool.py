@@ -1,6 +1,7 @@
 # app/tools/line_tool.py
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QPen, QColor, QPainterPath
+from PyQt6.QtWidgets import QGraphicsPathItem
 from .base_tool import Tool
 
 class LineTool(Tool):
@@ -84,15 +85,19 @@ class LineTool(Tool):
             path = QPainterPath()
             path.moveTo(self.points[0])
             path.lineTo(self.points[1])
-            
+
             pen = QPen(self.pen_color, self.pen_width)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-            
-            path_item = canvas.scene.addPath(path, pen)
+
+            path_item = QGraphicsPathItem(path)
+            path_item.setPen(pen)
             path_item.setFlags(
                 path_item.GraphicsItemFlag.ItemIsSelectable |
                 path_item.GraphicsItemFlag.ItemIsMovable
             )
+
+            from ..commands import AddItemCommand
+            canvas.undo_stack.push(AddItemCommand(canvas.scene, path_item, "Draw line"))
 
             # Сохраняем линию в список
             line_data = {

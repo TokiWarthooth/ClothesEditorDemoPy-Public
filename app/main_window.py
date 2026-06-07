@@ -102,6 +102,17 @@ class MainWindow(QMainWindow):
         # Меню Edit
         edit_menu = menubar.addMenu("Edit")
 
+        # Undo/Redo — создаём через QUndoStack, чтобы автоматически менялся текст и enabled
+        undo_action = self.canvas.undo_stack.createUndoAction(self, "Undo")
+        undo_action.setShortcut("Ctrl+Z")
+        edit_menu.addAction(undo_action)
+
+        redo_action = self.canvas.undo_stack.createRedoAction(self, "Redo")
+        redo_action.setShortcut("Ctrl+Y")
+        edit_menu.addAction(redo_action)
+
+        edit_menu.addSeparator()
+
         flip_h = QAction("Flip Horizontal", self)
         flip_h.setShortcut("Shift+H")
         flip_h.triggered.connect(lambda: self._flip_items(horizontal=True))
@@ -247,6 +258,7 @@ class MainWindow(QMainWindow):
         self.v_ruler.update()
 
     def _flip_items(self, horizontal: bool):
+        from .commands import TransformCommand
         items = self.canvas.scene.selectedItems()
         if not items:
             self.statusBar().showMessage("Select items first (use Select tool)")
@@ -259,7 +271,10 @@ class MainWindow(QMainWindow):
             t.translate(cx, cy)
             t.scale(-1 if horizontal else 1, 1 if horizontal else -1)
             t.translate(-cx, -cy)
-            item.setTransform(item.transform() * t)
+            old_tf = item.transform()
+            new_tf = old_tf * t
+            desc = "Flip horizontal" if horizontal else "Flip vertical"
+            self.canvas.undo_stack.push(TransformCommand(item, old_tf, new_tf, desc))
 
         axis = "horizontal" if horizontal else "vertical"
         self.statusBar().showMessage(f"Flipped {len(items)} item(s) {axis}")

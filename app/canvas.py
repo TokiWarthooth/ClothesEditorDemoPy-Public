@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
-from PyQt6.QtGui import QPainter, QColor, QPen, QBrush
+from PyQt6.QtGui import QPainter, QColor, QPen, QBrush, QUndoStack
 from PyQt6.QtCore import Qt, QRectF, QPointF, pyqtSignal
 
 class Canvas(QGraphicsView):
@@ -26,6 +26,8 @@ class Canvas(QGraphicsView):
         self.grid_color_light = QColor(220, 220, 220)  # Цвет сетки для светлой темы
         self.grid_color_dark = QColor(80, 80, 80)  # Цвет сетки для темной темы
         
+        self.undo_stack = QUndoStack(self)
+
         # Установим начальную тему
         self.set_theme(self.theme)
         
@@ -119,8 +121,10 @@ class Canvas(QGraphicsView):
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-            for item in self.scene.selectedItems():
-                self.scene.removeItem(item)
+            items = self.scene.selectedItems()
+            if items:
+                from .commands import RemoveItemsCommand
+                self.undo_stack.push(RemoveItemsCommand(self.scene, items))
         else:
             super().keyPressEvent(event)
 

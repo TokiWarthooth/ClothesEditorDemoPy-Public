@@ -40,10 +40,10 @@
   - Рамочное выделение (drag to select)
   - Delete / Backspace для удаления
 
-- [ ] **Undo / Redo**
-  - `QUndoStack` — стандартный механизм Qt
-  - Ctrl+Z / Ctrl+Y
-  - Без этого работа в редакторе невозможна
+- [x] **Undo / Redo** ✓
+  - QUndoStack в canvas, команды: AddItem, RemoveItems, Transform
+  - Ctrl+Z / Ctrl+Y через Edit меню (текст кнопок меняется: "Undo Draw line" и т.д.)
+  - Охват: линии, кривые Безье, шаблоны, удаление, flip
 
 ### Фаза 2 — Профессиональные инструменты (недели 4–6)
 

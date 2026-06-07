@@ -1,6 +1,7 @@
 # app/tools/pattern_tool.py
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QPen, QColor, QBrush
+from PyQt6.QtWidgets import QGraphicsPathItem
 from .base_tool import Tool
 
 class PatternTool(Tool):
@@ -54,15 +55,21 @@ class PatternTool(Tool):
         # Генерируем путь шаблона
         path = self.current_pattern.generate_path(**self.current_params)
         
-        # Создаем графический элемент
         pen = QPen(QColor(0, 0, 0), 2)
-        brush = QBrush(QColor(200, 220, 255, 100))  # Полупрозрачная заливка
-        
-        path_item = canvas.scene.addPath(path, pen, brush)
+        brush = QBrush(QColor(200, 220, 255, 100))
+
+        path_item = QGraphicsPathItem(path)
+        path_item.setPen(pen)
+        path_item.setBrush(brush)
         path_item.setPos(position)
         path_item.setFlags(
             path_item.GraphicsItemFlag.ItemIsSelectable |
             path_item.GraphicsItemFlag.ItemIsMovable
+        )
+
+        from ..commands import AddItemCommand
+        canvas.undo_stack.push(
+            AddItemCommand(canvas.scene, path_item, f"Place {self.current_pattern.name}")
         )
         
         # Сохраняем информацию о шаблоне

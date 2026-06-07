@@ -1,6 +1,7 @@
 # app/tools/bezier_tool.py
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QPainterPath, QPen, QColor, QBrush
+from PyQt6.QtWidgets import QGraphicsPathItem
 from .base_tool import Tool
 
 class BezierTool(Tool):
@@ -109,11 +110,14 @@ class BezierTool(Tool):
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
             
-            self.current_path = canvas.scene.addPath(path, pen)
+            self.current_path = QGraphicsPathItem(path)
+            self.current_path.setPen(pen)
             self.current_path.setFlags(
                 self.current_path.GraphicsItemFlag.ItemIsSelectable |
                 self.current_path.GraphicsItemFlag.ItemIsMovable
             )
+            from ..commands import AddItemCommand
+            canvas.undo_stack.push(AddItemCommand(canvas.scene, self.current_path, "Draw bezier"))
             
     def update_bezier_curve(self, canvas):
         if self.current_path and len(self.points) >= 2:
