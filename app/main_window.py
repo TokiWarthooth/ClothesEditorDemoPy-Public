@@ -10,6 +10,7 @@ from .pattern_panel import PatternPanel
 from .project_manager import ProjectManager
 from .measurements import MeasurementSystem
 from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
+from .seam_panel import SeamAllowancePanel
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -214,13 +215,18 @@ class MainWindow(QMainWindow):
         self.line_properties_dock.setVisible(False)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.line_properties_dock)
         
-        # Док-виджет для шаблонов выкроек (НОВЫЙ)
+        # Dok — шаблоны выкроек
         self.pattern_dock = QDockWidget("Pattern Templates", self)
         self.pattern_panel = PatternPanel()
         self.pattern_panel.pattern_selected.connect(self.on_pattern_selected)
         self.pattern_dock.setWidget(self.pattern_panel)
-        self.pattern_dock.setVisible(False)  # Скрываем по умолчанию
+        self.pattern_dock.setVisible(False)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.pattern_dock)
+
+        # Dok — припуски на швы
+        self.seam_dock = QDockWidget("Seam Allowance", self)
+        self.seam_dock.setWidget(SeamAllowancePanel(self.canvas))
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.seam_dock)
     
     def create_statusbar(self):
         sb = self.statusBar()
