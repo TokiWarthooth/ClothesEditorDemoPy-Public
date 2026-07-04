@@ -1,7 +1,6 @@
 # app/tool_manager.py
 from PyQt6.QtGui import QAction
-from .tools import (PenTool, SelectTool, LineTool, RectangleTool, EllipseTool,
-                    BezierTool, TextTool, GrainlineTool)
+from .tools import SelectTool, TextTool, GrainlineTool
 from .tools.pattern_tool import PatternTool
 
 class ToolManager:
@@ -9,11 +8,6 @@ class ToolManager:
         self.canvas = canvas
         self.tools = {
             "select": SelectTool(),
-            "pen": PenTool(),
-            "line": LineTool(),
-            "rectangle": RectangleTool(),
-            "ellipse": EllipseTool(),
-            "bezier": BezierTool(),
             "pattern": PatternTool(),
             "text": TextTool(),
             "grainline": GrainlineTool()

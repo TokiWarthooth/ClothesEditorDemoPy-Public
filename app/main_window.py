@@ -5,7 +5,6 @@ from PyQt6.QtGui import QAction, QTransform
 from PyQt6.QtCore import Qt
 from .canvas import Canvas
 from .tool_manager import ToolManager
-from .tools.bezier_tool import BezierTool
 from .pattern_panel import PatternPanel
 from .project_manager import ProjectManager
 from .measurements import MeasurementSystem
@@ -13,6 +12,7 @@ from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
 from .seam_panel import SeamAllowancePanel
 from .seam_style_panel import SeamStylePanel
 from .annotations_panel import AnnotationsPanel
+from .pattern_size_panel import PatternSizePanel
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -199,24 +199,6 @@ class MainWindow(QMainWindow):
         properties_dock.setWidget(properties_widget)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, properties_dock)
 
-        # Док-виджет для свойств инструмента Безье
-        self.bezier_properties_dock = QDockWidget("Bezier Properties", self)
-        self.bezier_properties_widget = QWidget()
-        self.bezier_properties_layout = QVBoxLayout()
-        self.bezier_properties_widget.setLayout(self.bezier_properties_layout)
-        self.bezier_properties_dock.setWidget(self.bezier_properties_widget)
-        self.bezier_properties_dock.setVisible(False)  # Скрываем по умолчанию
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.bezier_properties_dock)
-
-        # Док-виджет для свойств линии
-        self.line_properties_dock = QDockWidget("Line Properties", self)
-        self.line_properties_widget = QWidget()
-        self.line_properties_layout = QVBoxLayout()
-        self.line_properties_widget.setLayout(self.line_properties_layout)
-        self.line_properties_dock.setWidget(self.line_properties_widget)
-        self.line_properties_dock.setVisible(False)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.line_properties_dock)
-        
         # Dok — шаблоны выкроек
         self.pattern_dock = QDockWidget("Pattern Templates", self)
         self.pattern_panel = PatternPanel()
@@ -224,6 +206,11 @@ class MainWindow(QMainWindow):
         self.pattern_dock.setWidget(self.pattern_panel)
         self.pattern_dock.setVisible(False)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.pattern_dock)
+
+        # Dok — точный размер выбранной детали выкройки
+        self.pattern_size_dock = QDockWidget("Pattern Size", self)
+        self.pattern_size_dock.setWidget(PatternSizePanel(self.canvas))
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.pattern_size_dock)
 
         # Dok — припуски на швы
         self.seam_dock = QDockWidget("Seam Allowance", self)
@@ -363,53 +350,13 @@ class MainWindow(QMainWindow):
 
 
 
-    def update_bezier_properties(self, bezier_tool):
-        # Очищаем layout
-        while self.bezier_properties_layout.count():
-            child = self.bezier_properties_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        
-        # Добавляем элементы управления
-        from PyQt6.QtWidgets import QSlider, QLabel, QComboBox
-        
-        # Выбор режима
-        mode_label = QLabel("Mode:")
-        mode_combo = QComboBox()
-        mode_combo.addItems(["Create", "Edit", "Move"])
-        mode_combo.setCurrentText(bezier_tool.mode.capitalize())
-        mode_combo.currentTextChanged.connect(
-            lambda text: bezier_tool.set_mode(text.lower())
-        )
-        
-        # Настройка толщины
-        width_label = QLabel("Width:")
-        width_slider = QSlider(Qt.Orientation.Horizontal)
-        width_slider.setRange(1, 20)
-        width_slider.setValue(bezier_tool.pen_width)
-        width_slider.valueChanged.connect(bezier_tool.set_pen_width)
-        
-        self.bezier_properties_layout.addWidget(mode_label)
-        self.bezier_properties_layout.addWidget(mode_combo)
-        self.bezier_properties_layout.addWidget(width_label)
-        self.bezier_properties_layout.addWidget(width_slider)
-
     def on_tool_changed(self, tool):
         # Показываем/скрываем панели свойств
         tool_name = tool.__class__.__name__
-        is_bezier = tool_name == "BezierTool"
-        is_line = tool_name == "LineTool"
         is_pattern = tool_name == "PatternTool"
-        
-        self.bezier_properties_dock.setVisible(is_bezier)
-        self.line_properties_dock.setVisible(is_line)
+
         self.pattern_dock.setVisible(is_pattern)
-        
-        if is_bezier:
-            self.update_bezier_properties(tool)
-        elif is_line:
-            self.update_line_properties(tool)
-    
+
     def on_pattern_selected(self, template, params):
         """Обработчик выбора шаблона из панели"""
         pattern_tool = self.tool_manager.get_pattern_tool()
@@ -418,67 +365,3 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Pattern selected: {template.name}. Click on canvas to place it.")
             # Автоматически переключаемся на инструмент Pattern
             self.tool_manager.set_tool(pattern_tool)
-
-
-    def update_line_properties(self, line_tool):
-        while self.line_properties_layout.count():
-            child = self.line_properties_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        
-        from PyQt6.QtWidgets import QSlider, QLabel, QComboBox, QPushButton, QCheckBox
-        
-        # Выбор режима
-        mode_label = QLabel("Mode:")
-        mode_combo = QComboBox()
-        mode_combo.addItems(["create", "curve", "move"])
-        mode_combo.setCurrentText(line_tool.mode)
-        mode_combo.currentTextChanged.connect(line_tool.set_mode)
-        
-        # Настройка толщины
-        width_label = QLabel("Width:")
-        width_slider = QSlider(Qt.Orientation.Horizontal)
-        width_slider.setRange(1, 20)
-        width_slider.setValue(line_tool.pen_width)
-        width_slider.valueChanged.connect(line_tool.set_pen_width)
-        
-        # Привязка к сетке
-        snap_checkbox = QCheckBox("Snap to Grid")
-        snap_checkbox.setChecked(line_tool.snap_to_grid)
-        snap_checkbox.stateChanged.connect(line_tool.toggle_snap_to_grid)
-        
-        # Кнопка сброса
-        reset_button = QPushButton("Reset Line")
-        reset_button.clicked.connect(lambda: line_tool.reset(self.canvas))
-        
-        delete_button = QPushButton("Delete Selected Line")
-        delete_button.clicked.connect(lambda: self.delete_selected_line(line_tool))
-
-        clear_all_button = QPushButton("Clear All Lines")
-        clear_all_button.clicked.connect(lambda: line_tool.reset(self.canvas))
-
-        self.line_properties_layout.addWidget(mode_label)
-        self.line_properties_layout.addWidget(mode_combo)
-        self.line_properties_layout.addWidget(width_label)
-        self.line_properties_layout.addWidget(width_slider)
-        self.line_properties_layout.addWidget(snap_checkbox)
-        self.line_properties_layout.addWidget(delete_button)
-        self.line_properties_layout.addWidget(clear_all_button)
-        self.line_properties_layout.addWidget(reset_button)
-        self.line_properties_layout.addStretch()
-
-    def delete_selected_line(self, line_tool):
-        """Удаляет выбранную линию"""
-        if hasattr(line_tool, 'selected_line_index') and line_tool.selected_line_index != -1:
-            # Удаляем графический элемент
-            line_data = line_tool.lines[line_tool.selected_line_index]
-            try:
-                self.canvas.scene.removeItem(line_data['path_item'])
-            except:
-                pass
-            
-            # Удаляем из списка
-            line_tool.lines.pop(line_tool.selected_line_index)
-            line_tool.selected_line_index = -1
-            line_tool.edit_points = []
-            self.canvas.viewport().update()

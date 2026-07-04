@@ -1,8 +1,8 @@
 # app/tools/pattern_tool.py
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QPen, QColor, QBrush
-from PyQt6.QtWidgets import QGraphicsPathItem
 from .base_tool import Tool
+from .pattern_item import PatternPieceItem
 
 class PatternTool(Tool):
     """Инструмент для размещения и редактирования шаблонов выкроек"""
@@ -56,16 +56,13 @@ class PatternTool(Tool):
         path = self.current_pattern.generate_path(**self.current_params)
         
         pen = QPen(QColor(0, 0, 0), 2)
+        pen.setCosmetic(True)  # толщина контура не масштабируется вместе с деталью при ресайзе
         brush = QBrush(QColor(200, 220, 255, 100))
 
-        path_item = QGraphicsPathItem(path)
+        path_item = PatternPieceItem(path)
         path_item.setPen(pen)
         path_item.setBrush(brush)
         path_item.setPos(position)
-        path_item.setFlags(
-            path_item.GraphicsItemFlag.ItemIsSelectable |
-            path_item.GraphicsItemFlag.ItemIsMovable
-        )
 
         from ..commands import AddItemCommand
         canvas.undo_stack.push(

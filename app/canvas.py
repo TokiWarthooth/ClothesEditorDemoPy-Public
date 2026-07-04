@@ -143,14 +143,3 @@ class Canvas(QGraphicsView):
         return pen
     
 
-    def drawForeground(self, painter, rect):
-        """Переопределяем метод отрисовки переднего плана для точек редактирования"""
-        super().drawForeground(painter, rect)
-        
-        # Если есть текущий инструмент и он поддерживает отрисовку точек
-        if (self.current_tool and 
-            hasattr(self.current_tool, 'draw_edit_points') and 
-            hasattr(self.current_tool, 'mode') and 
-            self.current_tool.mode == "curve"):
-            
-            self.current_tool.draw_edit_points(painter, self)
