@@ -2,6 +2,13 @@
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QPainterPath
 import math
+from .measurements import MeasurementSystem
+
+# Все параметры шаблонов (width/height/length и т.д.) задаются в РЕАЛЬНЫХ
+# сантиметрах — так же, как линейка, припуски на швы и панель Pattern Size.
+# generate_path() переводит их в px сцены через этот коэффициент.
+PX_PER_CM = MeasurementSystem.PX_PER_CM
+
 
 class PatternTemplate:
     """Базовый класс для шаблонов выкроек"""
@@ -23,9 +30,12 @@ class SleeveTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Sleeve", "Sleeves")
         
-    def generate_path(self, width=150, height=400, curve_depth=30, **kwargs):
+    def generate_path(self, width=34, height=58, curve_depth=5, **kwargs):
+        width *= PX_PER_CM
+        height *= PX_PER_CM
+        curve_depth *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Начинаем с верхней точки (окат рукава)
         path.moveTo(0, curve_depth)
         
@@ -48,9 +58,9 @@ class SleeveTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "width", "label": "Width", "min": 100, "max": 300, "default": 150},
-            {"name": "height", "label": "Height", "min": 200, "max": 600, "default": 400},
-            {"name": "curve_depth", "label": "Curve Depth", "min": 10, "max": 60, "default": 30}
+            {"name": "width", "label": "Width (cm)", "min": 25, "max": 45, "default": 34},
+            {"name": "height", "label": "Height (cm)", "min": 45, "max": 70, "default": 58},
+            {"name": "curve_depth", "label": "Curve Depth (cm)", "min": 3, "max": 8, "default": 5}
         ]
 
 
@@ -59,9 +69,12 @@ class CollarTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Collar", "Collars")
         
-    def generate_path(self, width=200, height=80, neck_curve=40, **kwargs):
+    def generate_path(self, width=40, height=7, neck_curve=4, **kwargs):
+        width *= PX_PER_CM
+        height *= PX_PER_CM
+        neck_curve *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Начинаем с левого нижнего угла
         path.moveTo(0, height)
         
@@ -85,9 +98,9 @@ class CollarTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "width", "label": "Width", "min": 100, "max": 400, "default": 200},
-            {"name": "height", "label": "Height", "min": 40, "max": 150, "default": 80},
-            {"name": "neck_curve", "label": "Neck Curve", "min": 20, "max": 80, "default": 40}
+            {"name": "width", "label": "Width (cm)", "min": 30, "max": 50, "default": 40},
+            {"name": "height", "label": "Height (cm)", "min": 4, "max": 12, "default": 7},
+            {"name": "neck_curve", "label": "Neck Curve (cm)", "min": 2, "max": 8, "default": 4}
         ]
 
 
@@ -96,9 +109,12 @@ class PocketTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Pocket", "Pockets")
         
-    def generate_path(self, width=120, height=140, corner_radius=15, **kwargs):
+    def generate_path(self, width=14, height=16, corner_radius=2, **kwargs):
+        width *= PX_PER_CM
+        height *= PX_PER_CM
+        corner_radius *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Прямоугольный карман с закругленными углами
         path.moveTo(corner_radius, 0)
         path.lineTo(width - corner_radius, 0)
@@ -129,9 +145,9 @@ class PocketTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "width", "label": "Width", "min": 60, "max": 200, "default": 120},
-            {"name": "height", "label": "Height", "min": 80, "max": 250, "default": 140},
-            {"name": "corner_radius", "label": "Corner Radius", "min": 5, "max": 40, "default": 15}
+            {"name": "width", "label": "Width (cm)", "min": 10, "max": 20, "default": 14},
+            {"name": "height", "label": "Height (cm)", "min": 12, "max": 24, "default": 16},
+            {"name": "corner_radius", "label": "Corner Radius (cm)", "min": 1, "max": 5, "default": 2}
         ]
 
 
@@ -140,9 +156,12 @@ class SkirtTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Skirt Panel", "Skirts")
         
-    def generate_path(self, waist_width=180, hip_width=220, length=500, **kwargs):
+    def generate_path(self, waist_width=36, hip_width=46, length=58, **kwargs):
+        waist_width *= PX_PER_CM
+        hip_width *= PX_PER_CM
+        length *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Начинаем с левого верхнего угла (талия)
         path.moveTo(0, 0)
         
@@ -167,9 +186,58 @@ class SkirtTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "waist_width", "label": "Waist Width", "min": 100, "max": 300, "default": 180},
-            {"name": "hip_width", "label": "Hip Width", "min": 150, "max": 400, "default": 220},
-            {"name": "length", "label": "Length", "min": 200, "max": 800, "default": 500}
+            {"name": "waist_width", "label": "Waist Width (cm)", "min": 28, "max": 45, "default": 36},
+            {"name": "hip_width", "label": "Hip Width (cm)", "min": 38, "max": 55, "default": 46},
+            {"name": "length", "label": "Length (cm)", "min": 40, "max": 90, "default": 58}
+        ]
+
+
+class SkirtTemplate2(PatternTemplate):
+    """Юбка-полоска: постоянная ширина (без расширения к бёдрам), с двумя
+    вытачками (треугольными вырезами) на линии талии, выше линии бёдер."""
+
+    def __init__(self):
+        super().__init__("Skirt Strip (Darts)", "Skirts")
+
+    def generate_path(self, width=51, length=72, dart_width=3, dart_depth=10, **kwargs):
+        width *= PX_PER_CM
+        length *= PX_PER_CM
+        dart_width *= PX_PER_CM
+        dart_depth *= PX_PER_CM
+        path = QPainterPath()
+
+        # Вытачки симметрично на 30% и 70% ширины
+        dart1 = width * 0.3
+        dart2 = width * 0.7
+
+        # Верхний край (линия талии) с двумя треугольными вытачками —
+        # "пустое пространство", вырезанное для посадки по талии
+        path.moveTo(0, 0)
+        path.lineTo(dart1 - dart_width / 2, 0)
+        path.lineTo(dart1, dart_depth)
+        path.lineTo(dart1 + dart_width / 2, 0)
+        path.lineTo(dart2 - dart_width / 2, 0)
+        path.lineTo(dart2, dart_depth)
+        path.lineTo(dart2 + dart_width / 2, 0)
+        path.lineTo(width, 0)
+
+        # Правая сторона
+        path.lineTo(width, length)
+
+        # Низ
+        path.lineTo(0, length)
+
+        # Левая сторона
+        path.lineTo(0, 0)
+
+        return path
+
+    def get_parameters(self):
+        return [
+            {"name": "width", "label": "Width (cm)", "min": 30, "max": 70, "default": 51},
+            {"name": "length", "label": "Length (cm)", "min": 50, "max": 100, "default": 72},
+            {"name": "dart_width", "label": "Dart Width (cm)", "min": 1, "max": 6, "default": 3},
+            {"name": "dart_depth", "label": "Dart Depth (cm)", "min": 5, "max": 18, "default": 10}
         ]
 
 
@@ -178,9 +246,13 @@ class TrouserLegTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Trouser Leg", "Trousers")
         
-    def generate_path(self, waist_width=200, hip_width=240, leg_width=180, length=900, **kwargs):
+    def generate_path(self, waist_width=42, hip_width=50, leg_width=22, length=100, **kwargs):
+        waist_width *= PX_PER_CM
+        hip_width *= PX_PER_CM
+        leg_width *= PX_PER_CM
+        length *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Начинаем с левого верхнего угла
         path.moveTo(0, 0)
         
@@ -212,10 +284,10 @@ class TrouserLegTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "waist_width", "label": "Waist Width", "min": 120, "max": 350, "default": 200},
-            {"name": "hip_width", "label": "Hip Width", "min": 150, "max": 400, "default": 240},
-            {"name": "leg_width", "label": "Leg Width", "min": 100, "max": 300, "default": 180},
-            {"name": "length", "label": "Length", "min": 500, "max": 1200, "default": 900}
+            {"name": "waist_width", "label": "Waist Width (cm)", "min": 35, "max": 55, "default": 42},
+            {"name": "hip_width", "label": "Hip Width (cm)", "min": 40, "max": 60, "default": 50},
+            {"name": "leg_width", "label": "Leg Width (cm)", "min": 16, "max": 30, "default": 22},
+            {"name": "length", "label": "Length (cm)", "min": 85, "max": 115, "default": 100}
         ]
 
 
@@ -224,9 +296,13 @@ class BodyTemplate(PatternTemplate):
     def __init__(self):
         super().__init__("Bodice Front", "Bodice")
         
-    def generate_path(self, width=200, length=400, shoulder_width=140, neck_depth=80, **kwargs):
+    def generate_path(self, width=45, length=42, shoulder_width=18, neck_depth=8, **kwargs):
+        width *= PX_PER_CM
+        length *= PX_PER_CM
+        shoulder_width *= PX_PER_CM
+        neck_depth *= PX_PER_CM
         path = QPainterPath()
-        
+
         # Начинаем с левого плеча
         path.moveTo(0, 0)
         
@@ -235,7 +311,10 @@ class BodyTemplate(PatternTemplate):
         
         # Пройма (изогнутая линия)
         armhole_depth = length * 0.3
-        control1 = QPointF(shoulder_width + 20, armhole_depth * 0.3)
+        # +~14% от ширины плеча — сохраняет ту же пропорцию кривой проймы,
+        # что была при старом жёстко заданном смещении "+20" (в старых "сырых"
+        # единицах, когда shoulder_width по умолчанию был 140)
+        control1 = QPointF(shoulder_width * 1.14, armhole_depth * 0.3)
         control2 = QPointF(width, armhole_depth * 0.7)
         path.cubicTo(control1, control2, QPointF(width, armhole_depth))
         
@@ -257,10 +336,10 @@ class BodyTemplate(PatternTemplate):
         
     def get_parameters(self):
         return [
-            {"name": "width", "label": "Width", "min": 150, "max": 350, "default": 200},
-            {"name": "length", "label": "Length", "min": 250, "max": 600, "default": 400},
-            {"name": "shoulder_width", "label": "Shoulder Width", "min": 80, "max": 200, "default": 140},
-            {"name": "neck_depth", "label": "Neck Depth", "min": 40, "max": 150, "default": 80}
+            {"name": "width", "label": "Width (cm)", "min": 35, "max": 55, "default": 45},
+            {"name": "length", "label": "Length (cm)", "min": 35, "max": 50, "default": 42},
+            {"name": "shoulder_width", "label": "Shoulder Width (cm)", "min": 14, "max": 24, "default": 18},
+            {"name": "neck_depth", "label": "Neck Depth (cm)", "min": 5, "max": 12, "default": 8}
         ]
 
 
@@ -271,7 +350,7 @@ class PatternLibrary:
             "Sleeves": [SleeveTemplate()],
             "Collars": [CollarTemplate()],
             "Pockets": [PocketTemplate()],
-            "Skirts": [SkirtTemplate()],
+            "Skirts": [SkirtTemplate(), SkirtTemplate2()],
             "Trousers": [TrouserLegTemplate()],
             "Bodice": [BodyTemplate()]
         }

@@ -4,11 +4,9 @@ from app.startup_dialog import StartupDialog
 
 def main():
     app = QApplication(sys.argv)
-    
-    # Показываем стартовое окно
+
     startup_dialog = StartupDialog()
     if startup_dialog.exec() == StartupDialog.DialogCode.Accepted:
-        # Если пользователь выбрал действие, запускаем главное окно
         from app.main_window import MainWindow
         window = MainWindow(startup_dialog.project_data)
         window.show()

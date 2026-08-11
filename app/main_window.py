@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.project_data = project_data
         self.init_ui()
-        
+
     def init_ui(self):
         self.setWindowTitle("Clothing Designer")
         self.setGeometry(100, 100, 1200, 800)
@@ -73,13 +73,13 @@ class MainWindow(QMainWindow):
 
         if self.project_data["type"] == "existing":
             self.load_project(self.project_data["file_path"])
-    
+
     def create_menu(self):
         menubar = self.menuBar()
 
         # Меню File
         file_menu = menubar.addMenu("File")
-        
+
         new_action = QAction("New", self)
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.new_project)
@@ -94,14 +94,14 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_project_dialog)
         file_menu.addAction(save_action)
-        
+
         file_menu.addSeparator()
-        
+
         exit_action = QAction("Exit", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
-        
+
         # Меню Edit
         edit_menu = menubar.addMenu("Edit")
 
@@ -128,52 +128,52 @@ class MainWindow(QMainWindow):
 
         # Меню View
         view_menu = menubar.addMenu("View")
-        
+
         # Подменю Themes
         themes_menu = view_menu.addMenu("Themes")
-        
+
         light_theme_action = QAction("Light", self)
         light_theme_action.triggered.connect(lambda: self.canvas.set_theme("light"))
         themes_menu.addAction(light_theme_action)
-        
+
         dark_theme_action = QAction("Dark", self)
         dark_theme_action.triggered.connect(lambda: self.canvas.set_theme("dark"))
         themes_menu.addAction(dark_theme_action)
-        
+
         # Переключение сетки
         self.grid_action = QAction("Show Grid", self)
         self.grid_action.setCheckable(True)
         self.grid_action.setChecked(True)
         self.grid_action.triggered.connect(self.toggle_grid)
         view_menu.addAction(self.grid_action)
-        
+
         # Настройки сетки
         grid_menu = view_menu.addMenu("Grid Size")
-        
+
         small_grid = QAction("Small (10px)", self)
         small_grid.triggered.connect(lambda: self.canvas.set_grid_size(10))
         grid_menu.addAction(small_grid)
-        
+
         medium_grid = QAction("Medium (20px)", self)
         medium_grid.triggered.connect(lambda: self.canvas.set_grid_size(20))
         grid_menu.addAction(medium_grid)
-        
+
         large_grid = QAction("Large (30px)", self)
         large_grid.triggered.connect(lambda: self.canvas.set_grid_size(30))
         grid_menu.addAction(large_grid)
-        
+
         # Меню Tools (новое)
         tools_menu = menubar.addMenu("Tools")
         # Здесь можно добавить дополнительные инструменты
-    
+
     def create_toolbar(self):
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
-        
+
         # Добавляем инструменты через менеджер инструментов
         for tool_name, tool_action in self.tool_manager.get_tool_actions().items():
             toolbar.addAction(tool_action)
-    
+
     def create_dock_widgets(self):
         # Док-виджет для палитры цветов
         color_dock = QDockWidget("Colors", self)
@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         color_widget.setLayout(color_layout)
         color_dock.setWidget(color_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, color_dock)
-        
+
         # Док-виджет для слоев
         layers_dock = QDockWidget("Layers", self)
         layers_widget = QWidget()
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
         layers_widget.setLayout(layers_layout)
         layers_dock.setWidget(layers_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, layers_dock)
-        
+
         # Док-виджет для свойств инструментов (новый)
         properties_dock = QDockWidget("Properties", self)
         properties_widget = QWidget()
@@ -249,7 +249,7 @@ class MainWindow(QMainWindow):
         sb.addPermanentWidget(self.coord_label)
 
         sb.showMessage("Ready")
-    
+
     def _on_mouse_moved(self, scene_pos):
         self.coord_label.setText(
             self.measurements.format_coord(scene_pos.x(), scene_pos.y())
@@ -289,7 +289,7 @@ class MainWindow(QMainWindow):
         self.canvas.set_grid_visibility(checked)
         status = "enabled" if checked else "disabled"
         self.statusBar().showMessage(f"Grid {status}")
-    
+
     def new_project(self):
         reply = QMessageBox.question(
             self, "New Project",
@@ -343,12 +343,6 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Opened: {file_path}")
         else:
             QMessageBox.warning(self, "Open Error", f"Could not open: {file_path}")
-
-
-
-
-
-
 
     def on_tool_changed(self, tool):
         # Показываем/скрываем панели свойств
