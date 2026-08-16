@@ -1,9 +1,9 @@
 import math
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QComboBox, QDoubleSpinBox, QPushButton,
-                             QGraphicsPathItem)
+                             QComboBox, QDoubleSpinBox, QPushButton)
 from PyQt6.QtGui import QPen, QColor, QPainterPath
 from PyQt6.QtCore import Qt, QPointF
+from ...tools.graphics_items import SnappablePathItem
 
 # Тег для маркировки оверлеев стиля шва
 _STYLE_TAG = "seam_style"
@@ -136,7 +136,7 @@ class SeamStylePanel(QWidget):
                 overlay_path = _make_overlock_path(item.path(), size=size, step=size * 1.5)
                 color = QColor(220, 130, 30)
 
-            overlay = QGraphicsPathItem(overlay_path)
+            overlay = SnappablePathItem(overlay_path)
             overlay.setPen(QPen(color, 1.5))
             overlay.setPos(item.pos())
             overlay.setTransform(item.transform())

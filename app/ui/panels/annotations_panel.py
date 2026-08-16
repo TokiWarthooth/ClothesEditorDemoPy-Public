@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QSpinBox, QPushButton, QFrame, QGraphicsTextItem)
+                             QSpinBox, QPushButton, QFrame)
 from PyQt6.QtGui import QFont, QColor
+from ...tools.graphics_items import SnappableTextItem
 
 _NUMBER_TAG = "part_number"
 _NUMBER_KEY = 2
@@ -124,7 +125,7 @@ class AnnotationsPanel(QWidget):
         font.setBold(True)
 
         for item in items:
-            label = QGraphicsTextItem(str(number))
+            label = SnappableTextItem(str(number))
             label.setDefaultTextColor(QColor(20, 20, 20))
             label.setFont(font)
 

@@ -2,8 +2,8 @@
 import math
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QPen, QColor, QPainterPath
-from PyQt6.QtWidgets import QGraphicsPathItem
 from .base_tool import Tool
+from .graphics_items import SnappablePathItem
 
 
 def _build_grainline_path(start, end, head_size=12, head_angle_deg=28):
@@ -78,7 +78,7 @@ class GrainlineTool(Tool):
         pen = QPen(self.pen_color, self.pen_width)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
 
-        item = QGraphicsPathItem(path)
+        item = SnappablePathItem(path)
         item.setPen(pen)
         item.setFlags(
             item.GraphicsItemFlag.ItemIsSelectable |

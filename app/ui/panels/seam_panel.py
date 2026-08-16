@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                             QLabel, QDoubleSpinBox, QPushButton, QGraphicsPathItem)
+                             QLabel, QDoubleSpinBox, QPushButton)
 from PyQt6.QtGui import QPainterPathStroker, QPen, QColor
 from PyQt6.QtCore import Qt
+from ...tools.graphics_items import SnappablePathItem
 
 # Тег для идентификации элементов припуска
 _SEAM_TAG = "seam_allowance"
@@ -79,7 +80,7 @@ class SeamAllowancePanel(QWidget):
             seam_path = _compute_seam_path(item.path(), allowance_px)
 
             pen = QPen(QColor(210, 50, 50), 1.5, Qt.PenStyle.DashLine)
-            seam_item = QGraphicsPathItem(seam_path)
+            seam_item = SnappablePathItem(seam_path)
             seam_item.setPen(pen)
             seam_item.setPos(item.pos())
             seam_item.setTransform(item.transform())

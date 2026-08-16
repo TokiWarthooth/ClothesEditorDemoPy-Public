@@ -3,9 +3,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor, QTextCursor
 from PyQt6.QtWidgets import QGraphicsTextItem
 from .base_tool import Tool
+from .graphics_items import GridSnapMixin
 
 
-class AnnotationTextItem(QGraphicsTextItem):
+class AnnotationTextItem(GridSnapMixin, QGraphicsTextItem):
     """Текстовая метка: редактируется по двойному клику, иначе — обычный
     перетаскиваемый объект (иначе TextEditorInteraction перехватывает мышь
     у Select-инструмента, и перетаскивание не работает)."""

@@ -2,12 +2,13 @@
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QPen, QBrush, QColor, QTransform, QPainterPath
 from PyQt6.QtWidgets import QGraphicsPathItem, QGraphicsItem
+from .graphics_items import GridSnapMixin
 
 HANDLE_SIZE = 10
 MIN_SCALE = 0.1
 
 
-class PatternPieceItem(QGraphicsPathItem):
+class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
     """Деталь выкройки на холсте с угловыми хендлами для изменения размера.
 
     Ресайз реализован через QTransform (масштаб от опорного угла), а не
