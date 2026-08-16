@@ -5,6 +5,7 @@ from PyQt6.QtGui import QAction, QTransform
 from PyQt6.QtCore import Qt
 from .canvas import Canvas
 from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
+from .canvas_size_dialog import CanvasSizeDialog
 from .panels.pattern_panel import PatternPanel
 from .panels.seam_panel import SeamAllowancePanel
 from .panels.seam_style_panel import SeamStylePanel
@@ -70,6 +71,7 @@ class MainWindow(QMainWindow):
         self.canvas.mouse_moved.connect(self._on_mouse_moved)
         self.canvas.horizontalScrollBar().valueChanged.connect(self.h_ruler.update)
         self.canvas.verticalScrollBar().valueChanged.connect(self.v_ruler.update)
+        self.canvas.zoom_changed.connect(self._on_zoom_changed)
 
         if self.project_data["type"] == "existing":
             self.load_project(self.project_data["file_path"])
@@ -162,6 +164,13 @@ class MainWindow(QMainWindow):
         large_grid.triggered.connect(lambda: self.canvas.set_grid_size(30))
         grid_menu.addAction(large_grid)
 
+        view_menu.addSeparator()
+
+        # Изменение размера рабочей плоскости
+        canvas_size_action = QAction("Canvas Size...", self)
+        canvas_size_action.triggered.connect(self.open_canvas_size_dialog)
+        view_menu.addAction(canvas_size_action)
+
         # Меню Tools (новое)
         tools_menu = menubar.addMenu("Tools")
         # Здесь можно добавить дополнительные инструменты
@@ -248,7 +257,15 @@ class MainWindow(QMainWindow):
         self.coord_label.setMinimumWidth(200)
         sb.addPermanentWidget(self.coord_label)
 
+        # Текущий зум (постоянный виджет, справа)
+        self.zoom_label = QLabel("100%")
+        self.zoom_label.setMinimumWidth(50)
+        sb.addPermanentWidget(self.zoom_label)
+
         sb.showMessage("Ready")
+
+    def _on_zoom_changed(self, zoom_level):
+        self.zoom_label.setText(f"{round(zoom_level * 100)}%")
 
     def _on_mouse_moved(self, scene_pos):
         self.coord_label.setText(
@@ -283,6 +300,17 @@ class MainWindow(QMainWindow):
 
         axis = "horizontal" if horizontal else "vertical"
         self.statusBar().showMessage(f"Flipped {len(items)} item(s) {axis}")
+
+    def open_canvas_size_dialog(self):
+        """Открывает диалог изменения размера рабочей плоскости"""
+        scene_rect = self.canvas.sceneRect()
+        dlg = CanvasSizeDialog(self.measurements, scene_rect.width(), scene_rect.height(), self)
+        if dlg.exec() == CanvasSizeDialog.DialogCode.Accepted:
+            width_px, height_px = dlg.get_size_px()
+            self.canvas.set_scene_size(width_px, height_px)
+            self.statusBar().showMessage(
+                f"Canvas resized to {self.measurements.format(width_px)} × {self.measurements.format(height_px)}"
+            )
 
     def toggle_grid(self, checked):
         """Переключает видимость сетки на холсте"""

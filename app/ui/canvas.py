@@ -1,9 +1,15 @@
+import math
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame, QGraphicsTextItem
 from PyQt6.QtGui import QPainter, QColor, QPen, QBrush, QUndoStack
 from PyQt6.QtCore import Qt, QRectF, QPointF, pyqtSignal
 
 class Canvas(QGraphicsView):
     mouse_moved = pyqtSignal(QPointF)
+    zoom_changed = pyqtSignal(float)
+
+    MIN_ZOOM = 0.1
+    MAX_ZOOM = 8.0
+    ZOOM_STEP = 1.15
 
     def __init__(self, width, height):
         super().__init__()
@@ -12,24 +18,46 @@ class Canvas(QGraphicsView):
         self.setScene(self.scene)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setFrameShape(QFrame.Shape.NoFrame)
-        
+
+        # Зум колёсиком мыши всегда центрируется под курсором
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        self.zoom_level = 1.0
+
         # Настройки по умолчанию
         self.current_tool = None
         self.pen_color = QColor("black")
         self.pen_width = 2
         self.fill_color = QColor(0, 0, 0, 0)  # Прозрачная заливка
-        
+
         # Настройки темы и сетки
         self.theme = "light"  # По умолчанию светлая тема
         self.show_grid = True  # Показывать сетку по умолчанию
-        self.grid_size = 20  # Размер клетки сетки в пикселях
+        self.grid_size = 20  # Размер клетки сетки в пикселях (базовый, при 100% зуме)
         self.grid_color_light = QColor(220, 220, 220)  # Цвет сетки для светлой темы
         self.grid_color_dark = QColor(80, 80, 80)  # Цвет сетки для темной темы
-        
+
         self.undo_stack = QUndoStack(self)
 
         # Установим начальную тему
         self.set_theme(self.theme)
+
+    def wheelEvent(self, event):
+        """Зум колёсиком мыши, с центром под курсором."""
+        delta = event.angleDelta().y()
+        if delta == 0:
+            super().wheelEvent(event)
+            return
+
+        factor = self.ZOOM_STEP if delta > 0 else 1 / self.ZOOM_STEP
+        new_zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, self.zoom_level * factor))
+        applied_factor = new_zoom / self.zoom_level
+        if applied_factor != 1.0:
+            self.scale(applied_factor, applied_factor)
+            self.zoom_level = new_zoom
+            self.zoom_changed.emit(self.zoom_level)
+            self.viewport().update()
+        event.accept()
         
     def set_theme(self, theme_name):
         """Устанавливает тему оформления холста"""
@@ -58,37 +86,85 @@ class Canvas(QGraphicsView):
         """Устанавливает размер клетки сетки"""
         self.grid_size = size
         self.viewport().update()
+
+    def set_scene_size(self, width, height):
+        """Изменяет размер рабочей плоскости (холста)."""
+        self.scene.setSceneRect(0, 0, width, height)
+        self.viewport().update()
         
+    def _effective_grid_step(self):
+        """Подбирает шаг сетки в координатах сцены так, чтобы на экране
+        клетка оставалась примерно одного размера — при увеличении масштаба
+        сетка мельчает (шаг делится пополам), при уменьшении — укрупняется."""
+        scale = self.transform().m11()
+        if scale <= 0:
+            return self.grid_size
+
+        min_px, max_px = 15.0, 60.0
+        step = float(self.grid_size)
+        px = step * scale
+
+        guard = 0
+        while px > max_px and guard < 12:
+            step /= 2
+            px /= 2
+            guard += 1
+        while px < min_px and guard < 24:
+            step *= 2
+            px *= 2
+            guard += 1
+
+        return step
+
     def drawBackground(self, painter, rect):
         """Переопределяем метод отрисовки фона для добавления сетки"""
         # Сначала рисуем стандартный фон
         super().drawBackground(painter, rect)
-        
+
         # Если сетка включена, рисуем её
         if self.show_grid:
-            painter.setPen(QPen(self.grid_color, 1, Qt.PenStyle.DotLine))
-            
-            # Получаем границы сцены
-            scene_rect = self.sceneRect()
-            left = int(scene_rect.left())
-            right = int(scene_rect.right())
-            top = int(scene_rect.top())
-            bottom = int(scene_rect.bottom())
-            
-            # Рисуем вертикальные линии
-            for x in range(left, right + 1, self.grid_size):
-                painter.drawLine(x, top, x, bottom)
-                
-            # Рисуем горизонтальные линии
-            for y in range(top, bottom + 1, self.grid_size):
-                painter.drawLine(left, y, right, y)
-                
-            # Рисуем более заметные линии каждые 5 клеток
-            painter.setPen(QPen(self.grid_color, 1, Qt.PenStyle.SolidLine))
-            for x in range(left, right + 1, self.grid_size * 5):
-                painter.drawLine(x, top, x, bottom)
-            for y in range(top, bottom + 1, self.grid_size * 5):
-                painter.drawLine(left, y, right, y)
+            step = self._effective_grid_step()
+            if step <= 0:
+                return
+
+            # Пересекаем видимую область со сценой, чтобы не рисовать лишнее
+            scene_rect = self.sceneRect().intersected(rect)
+            left = scene_rect.left()
+            right = scene_rect.right()
+            top = scene_rect.top()
+            bottom = scene_rect.bottom()
+            if right <= left or bottom <= top:
+                return
+
+            # Мелкие (второстепенные) линии — ширина 0 = "косметическое" перо,
+            # всегда ровно 1 пиксель на экране независимо от масштаба
+            pen_minor = QPen(self.grid_color, 0, Qt.PenStyle.DotLine)
+            painter.setPen(pen_minor)
+
+            x = math.floor(left / step) * step
+            while x <= right:
+                painter.drawLine(QPointF(x, top), QPointF(x, bottom))
+                x += step
+
+            y = math.floor(top / step) * step
+            while y <= bottom:
+                painter.drawLine(QPointF(left, y), QPointF(right, y))
+                y += step
+
+            # Более заметные (главные) линии каждые 5 мелких клеток
+            major_step = step * 5
+            pen_major = QPen(self.grid_color, 0, Qt.PenStyle.SolidLine)
+            painter.setPen(pen_major)
+
+            x = math.floor(left / major_step) * major_step
+            while x <= right:
+                painter.drawLine(QPointF(x, top), QPointF(x, bottom))
+                x += major_step
+
+            y = math.floor(top / major_step) * major_step
+            while y <= bottom:
+                painter.drawLine(QPointF(left, y), QPointF(right, y))
+                y += major_step
     
     def set_tool(self, tool):
         self.current_tool = tool

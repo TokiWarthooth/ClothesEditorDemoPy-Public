@@ -36,8 +36,8 @@ class StartupDialog(QDialog):
         # Здесь можно добавить диалог для настройки нового проекта
         self.project_data = {
             "type": "new",
-            "width": 800,
-            "height": 600,
+            "width": 4000,   # ~106 см при 96dpi — с запасом под крупные детали выкроек
+            "height": 3000,  # ~79 см
             "background": "#FFFFFF"
         }
         self.accept()
