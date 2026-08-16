@@ -379,6 +379,12 @@ class MainWindow(QMainWindow):
 
         self.pattern_dock.setVisible(is_pattern)
 
+        if tool_name == "PolygonTool":
+            self.statusBar().showMessage(
+                "Click to add points (Shift = snap to grid). "
+                "Click near the start point (or Enter) to close the shape, Esc to cancel."
+            )
+
     def on_pattern_selected(self, template, params):
         """Обработчик выбора шаблона из панели"""
         pattern_tool = self.tool_manager.get_pattern_tool()

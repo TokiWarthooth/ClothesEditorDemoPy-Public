@@ -208,6 +208,10 @@ class Canvas(QGraphicsView):
             if items:
                 from ..core.commands import RemoveItemsCommand
                 self.undo_stack.push(RemoveItemsCommand(self.scene, items))
+        elif event.key() == Qt.Key.Key_Escape and hasattr(self.current_tool, 'cancel_operation'):
+            self.current_tool.cancel_operation(self)
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and hasattr(self.current_tool, 'finish_operation'):
+            self.current_tool.finish_operation(self)
         else:
             super().keyPressEvent(event)
 

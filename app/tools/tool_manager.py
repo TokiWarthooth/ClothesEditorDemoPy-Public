@@ -2,6 +2,7 @@
 from PyQt6.QtGui import QAction
 from . import SelectTool, TextTool, GrainlineTool
 from .pattern_tool import PatternTool
+from .polygon_tool import PolygonTool
 
 class ToolManager:
     def __init__(self, canvas):
@@ -9,6 +10,7 @@ class ToolManager:
         self.tools = {
             "select": SelectTool(),
             "pattern": PatternTool(),
+            "polygon": PolygonTool(),
             "text": TextTool(),
             "grainline": GrainlineTool()
         }
@@ -35,6 +37,9 @@ class ToolManager:
     def get_pattern_tool(self):
         """Возвращает инструмент Pattern"""
         return self.tools.get("pattern")
+
+    def get_polygon_tool(self):
+        return self.tools.get("polygon")
 
     def get_text_tool(self):
         return self.tools.get("text")
