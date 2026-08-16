@@ -64,7 +64,7 @@ class PatternTool(Tool):
         path_item.setBrush(brush)
         path_item.setPos(position)
 
-        from ..commands import AddItemCommand
+        from ..core.commands import AddItemCommand
         canvas.undo_stack.push(
             AddItemCommand(canvas.scene, path_item, f"Place {self.current_pattern.name}")
         )

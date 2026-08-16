@@ -85,7 +85,7 @@ class GrainlineTool(Tool):
             item.GraphicsItemFlag.ItemIsMovable
         )
 
-        from ..commands import AddItemCommand
+        from ..core.commands import AddItemCommand
         canvas.undo_stack.push(AddItemCommand(canvas.scene, item, "Add grainline arrow"))
 
     def cancel_operation(self, canvas):

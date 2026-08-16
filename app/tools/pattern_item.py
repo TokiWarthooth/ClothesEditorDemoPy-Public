@@ -141,7 +141,7 @@ class PatternPieceItem(QGraphicsPathItem):
                 scene = self.scene()
                 canvas = scene.views()[0] if scene and scene.views() else None
                 if canvas is not None:
-                    from ..commands import TransformCommand
+                    from ..core.commands import TransformCommand
                     canvas.undo_stack.push(
                         TransformCommand(self, old_transform, new_transform, "Resize pattern piece")
                     )

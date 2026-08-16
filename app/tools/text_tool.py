@@ -56,7 +56,7 @@ class TextTool(Tool):
         )
         item.setTextInteractionFlags(Qt.TextInteractionFlag.TextEditorInteraction)
 
-        from ..commands import AddItemCommand
+        from ..core.commands import AddItemCommand
         canvas.undo_stack.push(AddItemCommand(canvas.scene, item, "Add text label"))
 
         item.setFocus()
