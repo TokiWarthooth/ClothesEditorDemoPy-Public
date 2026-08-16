@@ -2,8 +2,11 @@
 """
 Скрипт для тестирования библиотеки шаблонов выкроек
 """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.pattern_templates import PatternLibrary
+from app.core.pattern_templates import PatternLibrary
 
 def test_pattern_library():
     """Тестирует библиотеку шаблонов"""

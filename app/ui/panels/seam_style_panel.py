@@ -109,7 +109,7 @@ class SeamStylePanel(QWidget):
         layout.addStretch()
 
     def _apply(self):
-        from .commands import AddItemCommand, ChangePenCommand
+        from ...core.commands import AddItemCommand, ChangePenCommand
 
         items = [i for i in self.canvas.scene.selectedItems()
                  if hasattr(i, 'path') and i.data(_STYLE_KEY) != _STYLE_TAG]
@@ -150,7 +150,7 @@ class SeamStylePanel(QWidget):
             )
 
     def _remove_all(self):
-        from .commands import RemoveItemsCommand
+        from ...core.commands import RemoveItemsCommand
         overlays = [i for i in self.canvas.scene.items()
                     if i.data(_STYLE_KEY) == _STYLE_TAG]
         if overlays:

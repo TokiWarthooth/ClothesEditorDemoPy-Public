@@ -1,10 +1,10 @@
-# app/pattern_size_panel.py
+# app/ui/panels/pattern_size_panel.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QDoubleSpinBox, QPushButton)
 from PyQt6.QtGui import QTransform
 from PyQt6.QtCore import QTimer
-from .measurements import MeasurementSystem
-from .tools.pattern_item import PatternPieceItem
+from ...core.measurements import MeasurementSystem
+from ...tools.pattern_item import PatternPieceItem
 
 PX_PER_CM = MeasurementSystem.PX_PER_CM
 
@@ -112,7 +112,7 @@ class PatternSizePanel(QWidget):
         new_transform.translate(-cx, -cy)
 
         if new_transform != old_transform:
-            from .commands import TransformCommand
+            from ...core.commands import TransformCommand
             self.canvas.undo_stack.push(
                 TransformCommand(item, old_transform, new_transform, "Set pattern size")
             )

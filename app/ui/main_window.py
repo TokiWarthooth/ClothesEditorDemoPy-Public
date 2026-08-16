@@ -4,15 +4,15 @@ from PyQt6.QtWidgets import (QMainWindow, QToolBar, QDockWidget, QWidget,
 from PyQt6.QtGui import QAction, QTransform
 from PyQt6.QtCore import Qt
 from .canvas import Canvas
-from .tool_manager import ToolManager
-from .pattern_panel import PatternPanel
-from .project_manager import ProjectManager
-from .measurements import MeasurementSystem
 from .rulers import HorizontalRuler, VerticalRuler, RULER_SIZE
-from .seam_panel import SeamAllowancePanel
-from .seam_style_panel import SeamStylePanel
-from .annotations_panel import AnnotationsPanel
-from .pattern_size_panel import PatternSizePanel
+from .panels.pattern_panel import PatternPanel
+from .panels.seam_panel import SeamAllowancePanel
+from .panels.seam_style_panel import SeamStylePanel
+from .panels.annotations_panel import AnnotationsPanel
+from .panels.pattern_size_panel import PatternSizePanel
+from ..core.project_manager import ProjectManager
+from ..core.measurements import MeasurementSystem
+from ..tools.tool_manager import ToolManager
 
 class MainWindow(QMainWindow):
     def __init__(self, project_data):
@@ -263,7 +263,7 @@ class MainWindow(QMainWindow):
         self.v_ruler.update()
 
     def _flip_items(self, horizontal: bool):
-        from .commands import TransformCommand
+        from ..core.commands import TransformCommand
         items = self.canvas.scene.selectedItems()
         if not items:
             self.statusBar().showMessage("Select items first (use Select tool)")

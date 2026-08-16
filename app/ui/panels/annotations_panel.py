@@ -111,7 +111,7 @@ class AnnotationsPanel(QWidget):
 
     # --- Нумерация деталей ---
     def _number_selected(self):
-        from .commands import AddItemCommand
+        from ...core.commands import AddItemCommand
 
         items = [i for i in self.canvas.scene.selectedItems()
                  if i.data(_NUMBER_KEY) != _NUMBER_TAG]
@@ -145,7 +145,7 @@ class AnnotationsPanel(QWidget):
         self.start_number_spin.setValue(number)
 
     def _remove_numbers(self):
-        from .commands import RemoveItemsCommand
+        from ...core.commands import RemoveItemsCommand
         labels = [i for i in self.canvas.scene.items()
                   if i.data(_NUMBER_KEY) == _NUMBER_TAG]
         if labels:

@@ -130,7 +130,7 @@ class Canvas(QGraphicsView):
         if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             items = self.scene.selectedItems()
             if items:
-                from .commands import RemoveItemsCommand
+                from ..core.commands import RemoveItemsCommand
                 self.undo_stack.push(RemoveItemsCommand(self.scene, items))
         else:
             super().keyPressEvent(event)

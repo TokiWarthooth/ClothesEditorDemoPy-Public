@@ -1,4 +1,4 @@
-# app/pattern_templates.py
+# app/core/pattern_templates.py
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QPainterPath
 import math

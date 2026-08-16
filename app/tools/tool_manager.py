@@ -1,7 +1,7 @@
-# app/tool_manager.py
+# app/tools/tool_manager.py
 from PyQt6.QtGui import QAction
-from .tools import SelectTool, TextTool, GrainlineTool
-from .tools.pattern_tool import PatternTool
+from . import SelectTool, TextTool, GrainlineTool
+from .pattern_tool import PatternTool
 
 class ToolManager:
     def __init__(self, canvas):

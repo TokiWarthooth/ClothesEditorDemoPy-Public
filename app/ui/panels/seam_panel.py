@@ -66,7 +66,7 @@ class SeamAllowancePanel(QWidget):
         layout.addStretch()
 
     def _apply(self):
-        from .commands import AddItemCommand
+        from ...core.commands import AddItemCommand
 
         items = [i for i in self.canvas.scene.selectedItems()
                  if hasattr(i, 'path') and i.data(_SEAM_KEY) != _SEAM_TAG]
@@ -94,7 +94,7 @@ class SeamAllowancePanel(QWidget):
             )
 
     def _remove_all(self):
-        from .commands import RemoveItemsCommand
+        from ...core.commands import RemoveItemsCommand
         seam_items = [i for i in self.canvas.scene.items()
                       if i.data(_SEAM_KEY) == _SEAM_TAG]
         if seam_items:

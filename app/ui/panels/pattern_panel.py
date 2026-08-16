@@ -1,9 +1,9 @@
-# app/pattern_panel.py
+# app/ui/panels/pattern_panel.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QComboBox, QSlider, QScrollArea, QGroupBox)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPen, QColor
-from .pattern_templates import PatternLibrary
+from ...core.pattern_templates import PatternLibrary
 
 class PatternPanel(QWidget):
     """Панель для работы с шаблонами выкроек"""
