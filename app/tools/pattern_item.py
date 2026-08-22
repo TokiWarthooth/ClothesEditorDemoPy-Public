@@ -1,11 +1,16 @@
 # app/tools/pattern_item.py
-from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtCore import Qt, QRectF, QPointF
 from PyQt6.QtGui import QPen, QBrush, QColor, QTransform, QPainterPath
 from PyQt6.QtWidgets import QGraphicsPathItem, QGraphicsItem
 from .graphics_items import GridSnapMixin
 
 HANDLE_SIZE = 10
+EDGE_HANDLE_SIZE = 8
 MIN_SCALE = 0.1
+# Порог (в локальных координатах пути) — если оттянутую точку ребра вернули
+# ближе этого расстояния к прямой середине ребра, ребро "распрямляется"
+# обратно (control=None), а не остаётся кривой почти незаметной кривизны.
+EDGE_STRAIGHTEN_THRESHOLD = 4
 
 
 class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
@@ -15,9 +20,18 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
     пересборкой пути по параметрам шаблона — у разных шаблонов разные имена
     параметров (width/height, waist_width/hip_width и т.д.), а трансформ
     работает одинаково для любой формы.
+
+    Если при создании передан `vertices` (список вершин контура в тех же
+    локальных координатах, что и path — так делает PolygonTool), деталь
+    дополнительно даёт хендлы на серединах рёбер: перетаскивание такого
+    хендла выгибает соответствующее ребро в квадратичную кривую Безье, а
+    сами вершины по краям ребра остаются на месте. Это нужно, например, для
+    выгибания прямого края рукава в пройму. Для деталей без vertices (пути
+    шаблонов) эта возможность недоступна — там нет однозначного разбиения
+    пути на прямые рёбра.
     """
 
-    def __init__(self, path):
+    def __init__(self, path, vertices=None):
         super().__init__(path)
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsSelectable |
@@ -28,6 +42,15 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
         self._drag_base_transform = None
         self._drag_old_transform = None
         self._drag_rect = None
+
+        self._vertices = list(vertices) if vertices else None
+        self._edge_controls = [None] * len(self._vertices) if self._vertices else None
+        self._active_edge = None
+        self._drag_edge_old_controls = None
+        self._drag_edge_p0 = None
+        self._drag_edge_p1 = None
+        if self._vertices:
+            self._rebuild_path()
 
     def _handle_points(self):
         rect = self.path().boundingRect()
@@ -54,6 +77,56 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
         return {name: QRectF(p.x() - hw, p.y() - hh, hw * 2, hh * 2)
                 for name, p in self._handle_points().items()}
 
+    def _rebuild_path(self):
+        n = len(self._vertices)
+        path = QPainterPath(self._vertices[0])
+        for i in range(n):
+            p1 = self._vertices[(i + 1) % n]
+            control = self._edge_controls[i]
+            if control is None:
+                path.lineTo(p1)
+            else:
+                path.quadTo(control, p1)
+        path.closeSubpath()
+        self.setPath(path)
+
+    def _edge_midpoints(self):
+        # Точка на середине ребра (t=0.5) — для прямого ребра это обычная
+        # середина отрезка, для уже выгнутого — точка на кривой Безье. Именно
+        # эта точка визуально становится хендлом, который тянет пользователь,
+        # поэтому формула перетаскивания в _preview_edge_curve — её обращение.
+        if not self._vertices:
+            return {}
+        n = len(self._vertices)
+        points = {}
+        for i in range(n):
+            p0 = self._vertices[i]
+            p1 = self._vertices[(i + 1) % n]
+            control = self._edge_controls[i]
+            if control is None:
+                points[i] = QPointF((p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2)
+            else:
+                points[i] = QPointF(
+                    0.25 * p0.x() + 0.5 * control.x() + 0.25 * p1.x(),
+                    0.25 * p0.y() + 0.5 * control.y() + 0.25 * p1.y(),
+                )
+        return points
+
+    def _edge_handle_rects(self):
+        if not self._vertices:
+            return {}
+        t = self.transform()
+        sx = abs(t.m11()) or 1.0
+        sy = abs(t.m22()) or 1.0
+        hw = EDGE_HANDLE_SIZE / sx / 2
+        hh = EDGE_HANDLE_SIZE / sy / 2
+        return {i: QRectF(p.x() - hw, p.y() - hh, hw * 2, hh * 2)
+                for i, p in self._edge_midpoints().items()}
+
+    def set_edge_control(self, index, control):
+        self._edge_controls[index] = control
+        self._rebuild_path()
+
     def boundingRect(self):
         rect = super().boundingRect()
         t = self.transform()
@@ -78,6 +151,10 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
             handle_path = QPainterPath()
             handle_path.addRect(rect)
             combined = combined.united(handle_path)
+        for rect in self._edge_handle_rects().values():
+            handle_path = QPainterPath()
+            handle_path.addRect(rect)
+            combined = combined.united(handle_path)
         return combined
 
     def paint(self, painter, option, widget=None):
@@ -97,37 +174,67 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
             for handle_rect in self._handle_rects().values():
                 painter.drawRect(handle_rect)
 
+            if self._vertices:
+                edge_handle_pen = QPen(QColor(255, 140, 0), 1)
+                edge_handle_pen.setCosmetic(True)
+                painter.setPen(edge_handle_pen)
+                painter.setBrush(QBrush(QColor(255, 255, 255)))
+                for edge_rect in self._edge_handle_rects().values():
+                    painter.drawEllipse(edge_rect)
+
     def _handle_at(self, local_pos):
         for name, rect in self._handle_rects().items():
             if rect.contains(local_pos):
-                return name
+                return ('corner', name)
+        for index, rect in self._edge_handle_rects().items():
+            if rect.contains(local_pos):
+                return ('edge', index)
         return None
 
     def hoverMoveEvent(self, event):
         handle = self._handle_at(event.pos()) if self.isSelected() else None
-        if handle in ('tl', 'br'):
+        kind = handle[0] if handle else None
+        name = handle[1] if handle else None
+        if kind == 'corner' and name in ('tl', 'br'):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif handle in ('tr', 'bl'):
+        elif kind == 'corner' and name in ('tr', 'bl'):
             self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif kind == 'edge':
+            self.setCursor(Qt.CursorShape.CrossCursor)
         else:
             self.unsetCursor()
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event):
         handle = self._handle_at(event.pos()) if self.isSelected() else None
-        if handle:
-            self._active_handle = handle
+        if handle and handle[0] == 'corner':
+            self._active_handle = handle[1]
             self._drag_base_transform = QTransform(self.transform())
             self._drag_old_transform = QTransform(self.transform())
             self._drag_rect = self.path().boundingRect()
             event.accept()
             return
+        if handle and handle[0] == 'edge':
+            index = handle[1]
+            n = len(self._vertices)
+            self._active_edge = index
+            self._drag_base_transform = QTransform(self.transform())
+            self._drag_edge_old_controls = list(self._edge_controls)
+            self._drag_edge_p0 = self._vertices[index]
+            self._drag_edge_p1 = self._vertices[(index + 1) % n]
+            event.accept()
+            return
         self._active_handle = None
+        self._active_edge = None
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self._active_handle:
             self._preview_resize(event)
+            event.accept()
+            return
+        if self._active_edge is not None:
+            self._preview_edge_curve(event)
             event.accept()
             return
         super().mouseMoveEvent(event)
@@ -150,7 +257,49 @@ class PatternPieceItem(GridSnapMixin, QGraphicsPathItem):
                     self.setTransform(new_transform)
             event.accept()
             return
+        if self._active_edge is not None:
+            index = self._active_edge
+            old_control = self._drag_edge_old_controls[index]
+            new_control = self._edge_controls[index]
+            self._active_edge = None
+            if new_control != old_control:
+                self._edge_controls[index] = old_control
+                self._rebuild_path()
+                scene = self.scene()
+                canvas = scene.views()[0] if scene and scene.views() else None
+                if canvas is not None:
+                    from ..core.commands import EdgeCurveCommand
+                    canvas.undo_stack.push(
+                        EdgeCurveCommand(self, index, old_control, new_control, "Curve pattern edge")
+                    )
+                else:
+                    self.set_edge_control(index, new_control)
+            event.accept()
+            return
         super().mouseReleaseEvent(event)
+
+    def _preview_edge_curve(self, event):
+        # Аналогично _preview_resize — координаты курсора переводим в
+        # локальные через трансформацию, зафиксированную в начале драга.
+        rel = event.scenePos() - self.pos()
+        inverted, ok = self._drag_base_transform.inverted()
+        local_pos = inverted.map(rel) if ok else rel
+
+        p0, p1 = self._drag_edge_p0, self._drag_edge_p1
+        straight_mid = QPointF((p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2)
+        dx = local_pos.x() - straight_mid.x()
+        dy = local_pos.y() - straight_mid.y()
+        if (dx * dx + dy * dy) ** 0.5 < EDGE_STRAIGHTEN_THRESHOLD:
+            self._edge_controls[self._active_edge] = None
+        else:
+            # Хендл стоит на самой кривой (t=0.5, см. _edge_midpoints), значит
+            # чтобы кривая прошла через точку под курсором, контрольную точку
+            # квадратичной кривой находим обращением B(0.5) = .25P0+.5C+.25P1.
+            self._edge_controls[self._active_edge] = QPointF(
+                2 * local_pos.x() - 0.5 * (p0.x() + p1.x()),
+                2 * local_pos.y() - 0.5 * (p0.y() + p1.y()),
+            )
+        self._rebuild_path()
 
     def _preview_resize(self, event):
         # Переводим позицию курсора в "локальные" координаты пути через

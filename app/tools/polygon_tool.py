@@ -92,7 +92,7 @@ class PolygonTool(Tool):
         pen.setCosmetic(True)
         brush = QBrush(QColor(200, 220, 255, 100))
 
-        item = PatternPieceItem(path)
+        item = PatternPieceItem(path, vertices=self.points)
         item.setPen(pen)
         item.setBrush(brush)
 

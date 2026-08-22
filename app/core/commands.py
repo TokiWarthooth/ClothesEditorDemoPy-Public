@@ -55,3 +55,20 @@ class TransformCommand(QUndoCommand):
 
     def undo(self):
         self.item.setTransform(self.old)
+
+
+class EdgeCurveCommand(QUndoCommand):
+    """Выгибание/выпрямление одного ребра PatternPieceItem (control=None — прямое ребро)."""
+
+    def __init__(self, item, edge_index, old_control, new_control, description="Curve edge"):
+        super().__init__(description)
+        self.item = item
+        self.edge_index = edge_index
+        self.old_control = old_control
+        self.new_control = new_control
+
+    def redo(self):
+        self.item.set_edge_control(self.edge_index, self.new_control)
+
+    def undo(self):
+        self.item.set_edge_control(self.edge_index, self.old_control)
